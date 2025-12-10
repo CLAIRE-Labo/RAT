@@ -56,6 +56,7 @@ We provide the environment in the Dockerfile
     ```
     We obtain the perplexity shown in Figure 4(c).
 
+* Pretrained checkpoints can be found in https://huggingface.co/barpitf/RAT/tree/main.
 ## Downstream results
 After we obtain the pretrained models, we can conduct different downstream evaluations with them. Detailed configurations can be found in Appendix A.2.
 * Table 2. We evaluate it using [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) repo. We provide necessary files in eval/lm_harness
