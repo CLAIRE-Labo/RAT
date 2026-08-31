@@ -1,5 +1,27 @@
 # 🐭 RAT 
 
+## Update: For simpler code and better performance, we recommend the RAT+ repo:
+https://github.com/wimh966/rat-plus
+
+Though RAT+ is a dense model that can switch to different chunk sizes (dilation sizes) at inference time, we also provide training of the sparse architecture from scratch. The corresponding results are shown in Table 1 of the [arXiv paper](https://arxiv.org/pdf/2602.18196).
+
+The main implementation differences:
+* Besides inter-chunk attention, we also support a local window hyperparameter, which can be used in the same layer (compared to inter-layer hybrids). This allows each token to attend to both local tokens and distant tokens selected by dilation directly.
+* We use overlapping chunks, which simplifies the implementation and slightly improves accuracy.
+* For best performance, we do not share the query and key parameters to reduce the parameter count. We leave parameter sharing for future work.
+
+To use the new code, please refer to environment in RAT+. Then, simply disable joint training and set the dilation size for inter-chunk attention and the local window size:
+
+```bash
+D=16, W=0: same setting as RAT (L=16). PPL and Avg. CSR are 7.60 and 56.99, compared to 7.67 and 56.7 previously.
+torchrun --nnodes=16 --nproc_per_node=4 lm.py experiment=fineweb_edu/ratplus-1b model.backbone.seq_cell.apply_re=true model.backbone.seq_cell.joint_train=false model.backbone.seq_cell.dilation_size=16 model.backbone.seq_cell.local_size=0
+
+D=64, W=64. attention pattern includes dilated and local attentions in the same layer. PPL and Avg. CSR are 7.63 and 58.74. CSR tasks are short and thus largely benefit from local window connections.
+torchrun --nnodes=16 --nproc_per_node=4 lm.py experiment=fineweb_edu/ratplus-1b model.backbone.seq_cell.apply_re=true model.backbone.seq_cell.joint_train=false model.backbone.seq_cell.dilation_size=64 model.backbone.seq_cell.local_size=64
+
+D=16 | W=1024. RAT(L=16) interleaves with SWA (W=1024) layers.
+torchrun --nnodes=16 --nproc_per_node=4 lm.py experiment=fineweb_edu/ratplus-1b model.backbone.seq_cell.apply_re=true model.backbone.seq_cell.joint_train=false model.backbone.seq_cell.dilation_size=[16, -1, 16, -1, 16, -1, 16, -1, 16, -1, 16, -1, 16, -1, 16, -1, 16, -1, 16, -1, 16, -1, 16, -1] model.backbone.seq_cell.local_size=[0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024, 0, 1024]
+```
 ## Intro
 **RAT: Bridging RNN Efficiency and Attention Accuracy in Language Modeling**
 
